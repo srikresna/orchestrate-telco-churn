@@ -1,6 +1,7 @@
 FROM tensorflow/serving:latest
 
-COPY ./output/serving_model /models/cc-model
+# COPY ./output/serving_model /models/cc-model
+COPY ./output/serving_model/1708754402 /models/cc-model
 COPY ./config /model_config
 
 ENV MODEL_NAME=cc-model 
