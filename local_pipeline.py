@@ -11,7 +11,6 @@ PIPELINE_NAME = "customer-churn-pipeline"
 DATA_ROOT = "data"
 TRANSFORM_MODULE_FILE = "modules/customer_churn_transform.py"
 TRAINER_MODULE_FILE = "modules/customer_churn_trainer.py"
-# requirement_file = os.path.join(root, "requirements.txt")
 
 # pipeline outputs
 OUTPUT_BASE = "output"
