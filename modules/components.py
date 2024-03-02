@@ -1,8 +1,8 @@
 """Initiate tfx pipeline components
 """
- 
+
 import os
- 
+
 import tensorflow as tf
 import tensorflow_model_analysis as tfma
 from tfx.components import (
@@ -21,7 +21,7 @@ from tfx.dsl.components.common.resolver import Resolver
 from tfx.types.standard_artifacts import Model, ModelBlessing
 from tfx.dsl.input_resolution.strategies.latest_blessed_model_strategy import (
     LatestBlessedModelStrategy)
- 
+
 def init_components(
     data_dir,
     transform_module,
@@ -31,7 +31,7 @@ def init_components(
     serving_model_dir,
 ):
     """Initiate tfx pipeline components
- 
+
     Args:
         data_dir (str): a path to the data
         transform_module (str): a path to the transform_module
@@ -39,7 +39,7 @@ def init_components(
         training_steps (int): number of training steps
         eval_steps (int): number of eval steps
         serving_model_dir (str): a path to the serving model directory
- 
+
     Returns:
         TFX components
     """
@@ -49,31 +49,31 @@ def init_components(
             example_gen_pb2.SplitConfig.Split(name="eval", hash_buckets=2)
         ])
     )
- 
+
     example_gen = CsvExampleGen(
         input_base=data_dir, 
         output_config=output
     )
-    
+
     statistics_gen = StatisticsGen(
         examples=example_gen.outputs["examples"]   
     )
-    
+
     schema_gen = SchemaGen(
         statistics=statistics_gen.outputs["statistics"]
     )
-    
+
     example_validator = ExampleValidator(
         statistics=statistics_gen.outputs['statistics'],
         schema=schema_gen.outputs['schema']
     )
-    
+
     transform  = Transform(
         examples=example_gen.outputs['examples'],
         schema= schema_gen.outputs['schema'],
         module_file=os.path.abspath(transform_module)
     )
-    
+
     trainer  = Trainer(
         module_file=os.path.abspath(training_module),
         examples = transform.outputs['transformed_examples'],
@@ -86,13 +86,13 @@ def init_components(
             splits=['eval'], 
             num_steps=eval_steps)
     )
-    
+
     model_resolver = Resolver(
         strategy_class= LatestBlessedModelStrategy,
         model = Channel(type=Model),
         model_blessing = Channel(type=ModelBlessing)
     ).with_id('Latest_blessed_model_resolver')
-    
+
     slicing_specs=[
         tfma.SlicingSpec(), 
         tfma.SlicingSpec(feature_keys=[
@@ -100,7 +100,7 @@ def init_components(
             "Partner"
         ])
     ]
- 
+
     metrics_specs = [
         tfma.MetricsSpec(metrics=[
                 tfma.MetricConfig(class_name='AUC'),
@@ -118,19 +118,19 @@ def init_components(
                 )
             ])
     ]
- 
+
     eval_config = tfma.EvalConfig(
         model_specs=[tfma.ModelSpec(label_key='Churn')],
         slicing_specs=slicing_specs,
         metrics_specs=metrics_specs
     )
-    
+
     evaluator = Evaluator(
         examples=example_gen.outputs['examples'],
         model=trainer.outputs['model'],
         baseline_model=model_resolver.outputs['model'],
         eval_config=eval_config)
-    
+
     pusher = Pusher(
         model=trainer.outputs["model"],
         model_blessing=evaluator.outputs["blessing"],
@@ -140,7 +140,7 @@ def init_components(
             )
         ),
     )
-    
+
     components = (
         example_gen,
         statistics_gen,
@@ -152,5 +152,5 @@ def init_components(
         evaluator,
         pusher
     )
-    
+
     return components
